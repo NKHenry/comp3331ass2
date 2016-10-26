@@ -6,6 +6,7 @@ import time
 #import Timer
 import threading
 import os
+#import Set
 from collections import deque
 from socket import *
 
@@ -28,11 +29,11 @@ def processLinks(data):
     lines = data.split("\n")
     originNode = Node(lines[1], lines[0])
     n = int(lines[2])
-    destinations = []
+    destinations = set()
     #print data
     for i in range(3,n+3):
         info = lines[i].split(" ")
-        destinations.append(info[0])
+        destinations.add(info[0])
         newNode = Node(info[0], int(info[2]))
         originNode.addEdge(newNode, float(info[1]))
     return (originNode, destinations)
@@ -144,17 +145,14 @@ startFile = sys.argv[3]
 
 homeNode = Node(homeId, port)
 
-#get neighbours from txt file
+#get neighbours from txt file and create home node
 f = open(startFile, "r")
 data = f.read()
 data = str(port) + "\n" + homeId + "\n" + data
-print data
 homeNode, destinations = processLinks(data)
-print homeNode.id
-print homeNode.port
-print len(homeNode.edges)
-#bind socket
 
+
+#bind socket
 hostSocket = socket(AF_INET, SOCK_DGRAM)
 hostSocket.bind(('127.0.0.1', port))
 hostSocket.settimeout(8)
@@ -178,9 +176,14 @@ while 1:
         #print "newData length = " + str(len(newData))
         newNode, destinations = processLinks(broadcast)
         #newNode, destinations = processLinks(newNode, newData)
-        destinations.append(newNode.id)
-        #if newNode.port != sender[1] and not newNode.id in heartbeat.keys():
+        destinations.add(newNode.id)
 
+        #if this packet is a forwarded one, add senders edges to destinations
+        if newNode.port != sender[1] and newNode.id in heartbeat.keys():
+            for n in nodes:
+                if n.port == sender[1]:
+                    for d in n.edges:
+                        destinations.add(d.dest.id)
         existing = False
         for n in nodes:
             if newNode.id == n.id:
@@ -193,7 +196,7 @@ while 1:
             #heartbeat = resetHeartbeat(heartbeat)
             print str(len(nodes)) + " nodes"
         for n in homeNode.edges:
-            #if destinations.count(n.dest.id) == 0:# and n.dest.port != sender[1]:
+            if n.dest.id not in destinations and n.dest.port != sender[1]:
                 sendPacket(n.dest.port, broadcast) #forward the packet to other nodes
         #for key in heartbeat.keys():
         #    if heartbeat[key] > 10:
@@ -210,7 +213,7 @@ while 1:
         #                    print "lost " + lost.id
         #                    print str(len(nodes)) + " nodes"
         #                    break
-        #        heartbeat = resetHeartbeat(heartbeat)
+                heartbeat = resetHeartbeat(heartbeat)
 
     except timeout:
         print "timeout"
