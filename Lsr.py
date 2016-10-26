@@ -149,6 +149,7 @@ hostSocket.settimeout(8)
 makeBroadcast(homeNode)
 #testThread()
 nodes = []
+heartbeat = {}
 nodes.append(homeNode)
 printSearch(homeNode)
 #i=0
@@ -165,15 +166,19 @@ while 1:
         existing = False
         for n in nodes:
             if payload[0] == n.id:
+                heartbeat[payload[0]] += 1
                 existing = True
                 continue
         if not existing:
+            heartbeat[payload[0]] = 0
             nodes.append(newNode)
             print str(len(nodes)) + " nodes"
         for n in homeNode.edges:
             if destinations.count(n.dest.id) == 0 and n.dest.port != sender[1]:
                 #print "forwarding packet to " + n.dest.id
                 sendPacket(n.dest.port, broadcast) #forward the packet to other nodes
+        #for key in heartbeat.keys():
+
         #print str(len(nodes)) + " nodes"
         #i+=1
         #time.sleep(1)
