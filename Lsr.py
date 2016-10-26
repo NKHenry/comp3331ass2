@@ -43,7 +43,6 @@ def processLinks(data):
     return (originNode, destinations)
 
 def makeBroadcast(originNode):
-    #print "Broadcasting"
     global broadcasted
     broadcasted = []
     data = str(originNode.port) + "\n"
@@ -96,11 +95,11 @@ def performSearch(originNode, nodes):
              elif dist < distance[n.dest.id]: #if we've found better path
                  distance[n.dest.id] = dist
                  previous[n.dest.id] = head.id
-             #if queue.count(n.dest.id) == 0 and visited.count(n.dest.id) == 0:
              if n.dest.id not in queue and n.dest.id not in visited:
                  queue.append(n.dest.id)
     return (previous, distance)
 
+#calculates
 def getPath(start, dest, previous):
     path = str(dest)
     curr = dest
@@ -110,6 +109,8 @@ def getPath(start, dest, previous):
     path = start + path
     return path
 
+#calls search algorithm and finds fastest path to each router and prints
+#takes the homeNode as an input
 def printSearch(originNode):
     global nodes
     graph = nodes
@@ -121,6 +122,8 @@ def printSearch(originNode):
     t2.daemon = True
     t2.start()
 
+#check to see if any node has died
+#if it hasn't received a packet from a node for 5 seconds it removes it
 def checkHeartbeat():
     dead = []
     global heartbeat
@@ -143,6 +146,7 @@ def checkHeartbeat():
     t3.daemon = True
     t3.start()
 
+#resets all heartbeat mappings to 0
 def resetHeartbeat(heartbeat):
     for key in heartbeat.keys():
         heartbeat[key] = 0
