@@ -126,14 +126,29 @@ def printSearch(originNode):
     t2.daemon = True
     t2.start()
 
-def checkHeartbeat(heartbeat):
+def checkHeartbeat():
     dead = []
-    for node in heartbeat.keys():
-        if heartbeat[node] == 0:
+    global heartbeat
+    global nodes
+    beats = heartbeat
+    newNodes = nodes
+    for node in beats.keys():
+        if beats[node] == 0:
             dead.append(node)
-    return dead
+    for i in range(0, len(newNodes)-1):
+        if newNodes[i].id in dead:
+            print "lost " + newNodes[i].id
+            del beats[newNodes[i].id]
+            newNodes.pop(i)
+    heartbeat = beats
+    heartbeat = resetHeartbeat(heartbeat)
+    nodes = newNodes
+    t3 = threading.Timer(5, checkHeartbeat, [])
+    t3.daemon = True
+    t3.start()
 
 def resetHeartbeat(heartbeat):
+    #global heartbeat
     for key in heartbeat.keys():
         heartbeat[key] = 0
     return heartbeat
@@ -164,6 +179,7 @@ removed = []
 heartbeat = {}
 nodes.append(homeNode)
 printSearch(homeNode)
+checkHeartbeat()
 #i=0
 while 1:
     try:
@@ -183,33 +199,24 @@ while 1:
         existing = False
         for n in nodes:
             if newNode.id == n.id:
-                heartbeat[newNode.id] += 1
+                try:
+                    heartbeat[newNode.id] += 1
+                except KeyError:
+                    pass
                 existing = True
                 break
         if not existing:
-            heartbeat[newNode.id] = 0
+            try:
+                heartbeat[newNode.id] = 0
+            except KeyError:
+                pass
             nodes.append(newNode)
             heartbeat = resetHeartbeat(heartbeat)
             print str(len(nodes)) + " nodes"
         for n in homeNode.edges:
             if n.dest.id not in destinations and n.dest.port != sender[1]:
-                sendPacket(n.dest.port, broadcast) #forward the packet to other nodes
-        for key in heartbeat.keys():
-            if heartbeat[key] > 10:
-                print "Count for " + key + " is " + str(heartbeat[key])
-                print payload[1]
-                dead = checkHeartbeat(heartbeat)
-                for dest in dead:
-                    print "deleting " + dest
-                    removed.append(dest)
-                    del heartbeat[dest]
-                    for i in range (0, len(nodes)):
-                        if dest == nodes[i].id:
-                            lost = nodes.pop(i)
-                            print "lost " + lost.id
-                            print str(len(nodes)) + " nodes"
-                            break
-                heartbeat = resetHeartbeat(heartbeat)
+                #print "sending "+newNode.id + "s broadcast to " + str(n.dest.port)
+                sendPacket(n.dest.port, broadcast) #forward the packet
 
     except timeout:
         print "timeout"
