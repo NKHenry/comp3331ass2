@@ -20,6 +20,11 @@ class Node:
         self.id = id
         self.port = port
         self.edges = []
+    def __eq__(self, other):
+        if self.id == other.id:
+            return True
+        else:
+            return False
     def addEdge(self, dest, cost):
         e = Edge(dest, cost)
         self.edges.append(e)
@@ -78,7 +83,7 @@ def performSearch(originNode, nodes):
     previous = {originNode.id:originNode.id}
     queue.append(originNode.id)
     while len(queue) != 0:
-        name = queue.pop(0)
+        #name = queue.pop(0)
         min = -1
         for n in queue:
             if min == -1:
@@ -88,6 +93,7 @@ def performSearch(originNode, nodes):
                 name = n
         #print "popped " + str(name)
         i=0
+        queue.remove(name)
         for n in nodes:
             if n.id == name:
                 head = n
@@ -142,16 +148,24 @@ def checkHeartbeat():
     global nodes
     beats = heartbeat
     newNodes = nodes
-    print "length of newNodes is " + str(len(newNodes))
+    #print "length of newNodes is " + str(len(newNodes))
+    print beats.values()
     for node in beats.keys():
-        #print node + " heartbeat is " + str(beats[node])
+        print node + " heartbeat is " + str(beats[node])
         if beats[node] == 0:
+            print "added " + node + " to dead"
             dead.append(node)
-    for i in range(0, len(newNodes)-1):
-        if newNodes[i].id in dead:
-            print "lost " + newNodes[i].id
-            del beats[newNodes[i].id]
-            newNodes.pop(i)
+    #for i in range(0, len(newNodes)):
+    #    print "length of newNodes is " + str(len(newNodes))
+    #    if newNodes[i].id in dead:
+    #        print "lost " + newNodes[i].id
+    #        del beats[newNodes[i].id]
+    #        newNodes.pop(i)
+    for n in newNodes:
+        if n.id in dead:
+            print "lost " + n.id
+            del beats[n.id]
+            newNodes.remove(n)
     #heartbeat = beats
     heartbeat = resetHeartbeat(beats)
     nodes = newNodes
