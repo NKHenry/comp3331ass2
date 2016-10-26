@@ -45,7 +45,9 @@ def makeBroadcast(originNode):
     data = data[:-1]
     for n in originNode.edges:
         sendPacket(n.dest.port, data)
-    threading.Timer(1, makeBroadcast, [homeNode]).start()
+    t1 = threading.Timer(1, makeBroadcast, [homeNode])
+    t1.daemon = True
+    t1.start()
     #return data
 
 
@@ -122,7 +124,9 @@ def printSearch(originNode):
     for n in nodes:
         path = getPath(originNode.id, str(n.id), previous)
         print "least-cost path to node "+str(n.id)+": "+str(path)+" and the cost is "+str(distance[n.id])
-    threading.Timer(20, printSearch, [originNode]).start()
+    t2 = threading.Timer(20, printSearch, [originNode])
+    t2.daemon = True
+    t2.start()
 
 homeId = sys.argv[1]
 port = int(sys.argv[2])
@@ -157,6 +161,7 @@ while 1:
         newData = payload[1:]
         #print "newData length = " + str(len(newData))
         newNode, destinations = processLinks(newNode, newData)
+        destinations.append(newNode.id)
         existing = False
         for n in nodes:
             if payload[0] == n.id:
@@ -166,7 +171,8 @@ while 1:
             nodes.append(newNode)
             print str(len(nodes)) + " nodes"
         for n in homeNode.edges:
-            if destinations.count(n.dest.id) == 0:
+            if destinations.count(n.dest.id) == 0 and n.dest.port != sender[1]:
+                #print "forwarding packet to " + n.dest.id
                 sendPacket(n.dest.port, broadcast) #forward the packet to other nodes
         #print str(len(nodes)) + " nodes"
         #i+=1
