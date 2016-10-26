@@ -170,12 +170,8 @@ while 1:
         #print "listening"
         broadcast, sender = hostSocket.recvfrom(1024)
         #print "recieved packet"
-        payload = broadcast.split("\n")
-        #newNode = Node(payload[0], sender[1])
-        #newData = payload[1:]
-        #print "newData length = " + str(len(newData))
+        #payload = broadcast.split("\n")
         newNode, destinations = processLinks(broadcast)
-        #newNode, destinations = processLinks(newNode, newData)
         destinations.add(newNode.id)
 
         #if this packet is a forwarded one, add senders edges to destinations
@@ -187,32 +183,32 @@ while 1:
         existing = False
         for n in nodes:
             if newNode.id == n.id:
-                #heartbeat[newNode.id] += 1
+                heartbeat[newNode.id] += 1
                 existing = True
                 break
         if not existing:
-            #heartbeat[newNode.id] = 0
+            heartbeat[newNode.id] = 0
             nodes.append(newNode)
-            #heartbeat = resetHeartbeat(heartbeat)
+            heartbeat = resetHeartbeat(heartbeat)
             print str(len(nodes)) + " nodes"
         for n in homeNode.edges:
             if n.dest.id not in destinations and n.dest.port != sender[1]:
                 sendPacket(n.dest.port, broadcast) #forward the packet to other nodes
-        #for key in heartbeat.keys():
-        #    if heartbeat[key] > 10:
-        #        print "Count for " + key + " is " + str(heartbeat[key])
-        #        print payload[1]
-        #        dead = checkHeartbeat(heartbeat)
-        #        for dest in dead:
-        #            print "deleting " + dest
-        #            removed.append(dest)
-        #            del heartbeat[dest]
-        #            for i in range (0, len(nodes)):
-        #                if dest == nodes[i].id:
-        #                    lost = nodes.pop(i)
-        #                    print "lost " + lost.id
-        #                    print str(len(nodes)) + " nodes"
-        #                    break
+        for key in heartbeat.keys():
+            if heartbeat[key] > 10:
+                print "Count for " + key + " is " + str(heartbeat[key])
+                print payload[1]
+                dead = checkHeartbeat(heartbeat)
+                for dest in dead:
+                    print "deleting " + dest
+                    removed.append(dest)
+                    del heartbeat[dest]
+                    for i in range (0, len(nodes)):
+                        if dest == nodes[i].id:
+                            lost = nodes.pop(i)
+                            print "lost " + lost.id
+                            print str(len(nodes)) + " nodes"
+                            break
                 heartbeat = resetHeartbeat(heartbeat)
 
     except timeout:
