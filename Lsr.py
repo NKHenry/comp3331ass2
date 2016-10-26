@@ -24,13 +24,14 @@ class Node:
         self.edges.append(e)
 
 #processess the config.txt format string and returns a list of edges
-def processLinks(originNode, data):
-    #lines = data.split("\n")
-    n = int(data[0])
+def processLinks(data):
+    lines = data.split("\n")
+    originNode = Node(lines[1], lines[0])
+    n = int(lines[2])
     destinations = []
     #print data
-    for i in range(1,n+1):
-        info = data[i].split(" ")
+    for i in range(3,n+3):
+        info = lines[i].split(" ")
         destinations.append(info[0])
         newNode = Node(info[0], int(info[2]))
         originNode.addEdge(newNode, float(info[1]))
@@ -38,7 +39,8 @@ def processLinks(originNode, data):
 
 def makeBroadcast(originNode):
     #print "Broadcasting"
-    data = originNode.id + "\n"
+    data = str(originNode.port) + "\n"
+    data += originNode.id + "\n"
     data += str(len(originNode.edges)) + "\n"
     for edge in originNode.edges:
         data += edge.dest.id + " " + str(edge.cost) + " " + str(edge.dest.port) + "\n"
@@ -52,9 +54,7 @@ def makeBroadcast(originNode):
 
 
 def sendPacket(port, data):
-    #for n in originNode.edges:
-        #print "sending to " + n.dest.id
-        hostSocket.sendto(data, ('127.0.0.1', port))
+    hostSocket.sendto(data, ('127.0.0.1', port))
 
 def priorityInsert (dest, dist,queue, distance):
     if len(queue) == 0:
@@ -76,7 +76,7 @@ def performSearch(originNode, nodes):
     queue.append(originNode.id)
     while len(queue) != 0:
         name = queue.pop(0)
-        print "popped " + str(name)
+        #print "popped " + str(name)
         i=0
         for n in nodes:
             if n.id == name:
@@ -108,13 +108,10 @@ def getPath(start, dest, previous):
     path = str(dest)
     curr = dest
     while previous[curr] != start:
-        #print previous[curr]
         path = previous[curr] + path
         curr = previous[curr]
-        #print path
     path = start + path
     return path
-
 
 def printSearch(originNode):
     #print "printSearch"
@@ -128,6 +125,19 @@ def printSearch(originNode):
     t2.daemon = True
     t2.start()
 
+def checkHeartbeat(heartbeat):
+    dead = []
+    for node in heartbeat.keys():
+        if heartbeat[node] == 0:
+            dead.append(node)
+    return dead
+
+def resetHeartbeat(heartbeat):
+    for key in heartbeat.keys():
+        heartbeat[key] = 0
+    return heartbeat
+
+#################    PROGRAM START #####################################
 homeId = sys.argv[1]
 port = int(sys.argv[2])
 startFile = sys.argv[3]
@@ -136,10 +146,13 @@ homeNode = Node(homeId, port)
 
 #get neighbours from txt file
 f = open(startFile, "r")
-string = f.read()
-data = string.split("\n")
-homeNode, destinations = processLinks(homeNode, data)
-
+data = f.read()
+data = str(port) + "\n" + homeId + "\n" + data
+print data
+homeNode, destinations = processLinks(data)
+print homeNode.id
+print homeNode.port
+print len(homeNode.edges)
 #bind socket
 
 hostSocket = socket(AF_INET, SOCK_DGRAM)
@@ -149,39 +162,56 @@ hostSocket.settimeout(8)
 makeBroadcast(homeNode)
 #testThread()
 nodes = []
+removed = []
 heartbeat = {}
 nodes.append(homeNode)
 printSearch(homeNode)
 #i=0
 while 1:
     try:
+        #print "listening"
         broadcast, sender = hostSocket.recvfrom(1024)
         #print "recieved packet"
         payload = broadcast.split("\n")
-        newNode = Node(payload[0], sender[1])
-        newData = payload[1:]
+        #newNode = Node(payload[0], sender[1])
+        #newData = payload[1:]
         #print "newData length = " + str(len(newData))
-        newNode, destinations = processLinks(newNode, newData)
+        newNode, destinations = processLinks(broadcast)
+        #newNode, destinations = processLinks(newNode, newData)
         destinations.append(newNode.id)
+        #if newNode.port != sender[1] and not newNode.id in heartbeat.keys():
+
         existing = False
         for n in nodes:
-            if payload[0] == n.id:
-                heartbeat[payload[0]] += 1
+            if newNode.id == n.id:
+                #heartbeat[newNode.id] += 1
                 existing = True
-                continue
+                break
         if not existing:
-            heartbeat[payload[0]] = 0
+            #heartbeat[newNode.id] = 0
             nodes.append(newNode)
+            #heartbeat = resetHeartbeat(heartbeat)
             print str(len(nodes)) + " nodes"
         for n in homeNode.edges:
-            if destinations.count(n.dest.id) == 0 and n.dest.port != sender[1]:
-                #print "forwarding packet to " + n.dest.id
+            #if destinations.count(n.dest.id) == 0:# and n.dest.port != sender[1]:
                 sendPacket(n.dest.port, broadcast) #forward the packet to other nodes
         #for key in heartbeat.keys():
+        #    if heartbeat[key] > 10:
+        #        print "Count for " + key + " is " + str(heartbeat[key])
+        #        print payload[1]
+        #        dead = checkHeartbeat(heartbeat)
+        #        for dest in dead:
+        #            print "deleting " + dest
+        #            removed.append(dest)
+        #            del heartbeat[dest]
+        #            for i in range (0, len(nodes)):
+        #                if dest == nodes[i].id:
+        #                    lost = nodes.pop(i)
+        #                    print "lost " + lost.id
+        #                    print str(len(nodes)) + " nodes"
+        #                    break
+        #        heartbeat = resetHeartbeat(heartbeat)
 
-        #print str(len(nodes)) + " nodes"
-        #i+=1
-        #time.sleep(1)
     except timeout:
         print "timeout"
         #break
