@@ -79,6 +79,13 @@ def performSearch(originNode, nodes):
     queue.append(originNode.id)
     while len(queue) != 0:
         name = queue.pop(0)
+        min = -1
+        for n in queue:
+            if min == -1:
+                min = distance[n]
+                name = n
+            elif distance[n] < min:
+                name = n
         #print "popped " + str(name)
         i=0
         for n in nodes:
@@ -104,7 +111,8 @@ def performSearch(originNode, nodes):
                  #print distance[n.dest.id]
                  previous[n.dest.id] = head.id
              if queue.count(n.dest.id) == 0 and visited.count(n.dest.id) == 0:
-                 queue = priorityInsert(n.dest.id, dist, queue, distance)
+                 #queue = priorityInsert(n.dest.id, dist, queue, distance)
+                 queue.append(n.dest.id)
     return (previous, distance)
 
 def getPath(start, dest, previous):
