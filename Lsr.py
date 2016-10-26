@@ -149,9 +149,9 @@ def checkHeartbeat():
     beats = heartbeat
     newNodes = nodes
     #print "length of newNodes is " + str(len(newNodes))
-    print beats.values()
+    #print beats.values()
     for node in beats.keys():
-        print node + " heartbeat is " + str(beats[node])
+        #print node + " heartbeat is " + str(beats[node])
         if beats[node] == 0:
             print "added " + node + " to dead"
             dead.append(node)
@@ -179,7 +179,7 @@ def resetHeartbeat(heartbeat):
     #print heartbeat.values()
     for key in heartbeat.keys():
         heartbeat[key] = 0
-    print heartbeat.values()
+    #print heartbeat.values()
     return heartbeat
 
 #################    PROGRAM START #####################################
