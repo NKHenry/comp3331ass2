@@ -119,9 +119,9 @@ def printSearch(originNode):
     global nodes
     graph = nodes
     previous, distance = performSearch(originNode, graph)
-    for key in distance:
-        path = getPath(originNode.id, str(key), previous)
-        print "least-cost path to node "+str(key)+": "+str(path)+" and the cost is "+str(distance[key])
+    for n in nodes:
+        path = getPath(originNode.id, str(n.id), previous)
+        print "least-cost path to node "+str(n.id)+": "+str(path)+" and the cost is "+str(distance[n.id])
     threading.Timer(20, printSearch, [originNode]).start()
 
 homeId = sys.argv[1]
@@ -173,4 +173,4 @@ while 1:
         #time.sleep(1)
     except timeout:
         print "timeout"
-        break
+        #break
