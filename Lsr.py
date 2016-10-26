@@ -40,6 +40,8 @@ def processLinks(data):
 
 def makeBroadcast(originNode):
     #print "Broadcasting"
+    global broadcasted
+    broadcasted = []
     data = str(originNode.port) + "\n"
     data += originNode.id + "\n"
     data += str(len(originNode.edges)) + "\n"
@@ -132,7 +134,9 @@ def checkHeartbeat():
     global nodes
     beats = heartbeat
     newNodes = nodes
+    print "length of newNodes is " + str(len(newNodes))
     for node in beats.keys():
+        #print node + " heartbeat is " + str(beats[node])
         if beats[node] == 0:
             dead.append(node)
     for i in range(0, len(newNodes)-1):
@@ -140,8 +144,8 @@ def checkHeartbeat():
             print "lost " + newNodes[i].id
             del beats[newNodes[i].id]
             newNodes.pop(i)
-    heartbeat = beats
-    heartbeat = resetHeartbeat(heartbeat)
+    #heartbeat = beats
+    heartbeat = resetHeartbeat(beats)
     nodes = newNodes
     t3 = threading.Timer(5, checkHeartbeat, [])
     t3.daemon = True
@@ -149,8 +153,11 @@ def checkHeartbeat():
 
 def resetHeartbeat(heartbeat):
     #global heartbeat
+    #print heartbeat.keys()
+    #print heartbeat.values()
     for key in heartbeat.keys():
         heartbeat[key] = 0
+    print heartbeat.values()
     return heartbeat
 
 #################    PROGRAM START #####################################
@@ -175,7 +182,7 @@ hostSocket.settimeout(8)
 makeBroadcast(homeNode)
 #testThread()
 nodes = []
-removed = []
+broadcasted = []
 heartbeat = {}
 nodes.append(homeNode)
 printSearch(homeNode)
@@ -214,10 +221,11 @@ while 1:
             heartbeat = resetHeartbeat(heartbeat)
             print str(len(nodes)) + " nodes"
         for n in homeNode.edges:
-            if n.dest.id not in destinations and n.dest.port != sender[1]:
+            if n.dest.id not in destinations and n.dest.port != sender[1] and newNode.id not in broadcasted:
+            #if n.dest.id not in destinations and newNode.id not in broadcasted:
                 #print "sending "+newNode.id + "s broadcast to " + str(n.dest.port)
                 sendPacket(n.dest.port, broadcast) #forward the packet
-
+        broadcasted.append(newNode.id)
     except timeout:
         print "timeout"
         #break
