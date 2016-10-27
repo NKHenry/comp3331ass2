@@ -1,12 +1,10 @@
 # COMP3331 Assignment 2 by Nathaniel Henry - z3419400
+#written using python 2.7
 
 import sys
 import time
-#from threading import Timer
-#import Timer
 import threading
 import os
-#import Set
 from collections import deque
 from socket import *
 
@@ -29,7 +27,9 @@ class Node:
         e = Edge(dest, cost)
         self.edges.append(e)
 
-#processess the config.txt format string and returns a list of edges
+#processess data according to the config.txt format and returns a node object
+#and a list of the destinations the node can reach
+#argument is a string in the format described in report
 def processLinks(data):
     lines = data.split("\n")
     originNode = Node(lines[1], lines[0])
@@ -42,6 +42,8 @@ def processLinks(data):
         originNode.addEdge(newNode, float(info[1]))
     return (originNode, destinations)
 
+#creates and broadcasts the packet information for this router
+#input is the homeNode
 def makeBroadcast(originNode):
     global broadcasted
     broadcasted = []
@@ -57,13 +59,16 @@ def makeBroadcast(originNode):
     t1.daemon = True
     t1.start()
 
-
+#forwards a packet to a specifed port on local computer
+#arguments are the port number and the data to be sent
 def sendPacket(port, data):
     hostSocket.sendto(data, ('127.0.0.1', port))
 
-
+#implementation of djikstras algorithm
+#arguments are the homeNode and a list of active nodes
+#returns a tuple containing 2 hashmaps. First mapps node id to the id of their
+#previously traveled node. The second maps node id to cost to reach node
 def performSearch(originNode, nodes):
-    print "starting search"
     queue = []
     visited = []
     distance = {originNode.id:0}
@@ -99,7 +104,9 @@ def performSearch(originNode, nodes):
                  queue.append(n.dest.id)
     return (previous, distance)
 
-#calculates
+#finds the path from the home node to a destination using previous dicitonary
+#arguments are start id, destination id, dictionary of prev dest from
+#performSearch function
 def getPath(start, dest, previous):
     path = str(dest)
     curr = dest
@@ -109,8 +116,9 @@ def getPath(start, dest, previous):
     path = start + path
     return path
 
-#calls search algorithm and finds fastest path to each router and prints
+#calls search algorithm and finds fastest path to each router and prints info
 #takes the homeNode as an input
+#also starts thread which runs every 30 seconds
 def printSearch(originNode):
     global nodes
     graph = nodes
@@ -118,7 +126,7 @@ def printSearch(originNode):
     for n in nodes:
         path = getPath(originNode.id, str(n.id), previous)
         print "least-cost path to node "+str(n.id)+": "+str(path)+" and the cost is "+str(distance[n.id])
-    t2 = threading.Timer(20, printSearch, [originNode])
+    t2 = threading.Timer(30, printSearch, [originNode])
     t2.daemon = True
     t2.start()
 
@@ -217,4 +225,3 @@ while 1:
         broadcasted.append(newNode.id)
     except timeout:
         print "timeout"
-        #break
