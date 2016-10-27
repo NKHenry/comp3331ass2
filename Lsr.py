@@ -124,8 +124,9 @@ def printSearch(originNode):
     graph = nodes
     previous, distance = performSearch(originNode, graph)
     for n in nodes:
-        path = getPath(originNode.id, str(n.id), previous)
-        print "least-cost path to node "+str(n.id)+": "+str(path)+" and the cost is "+str(distance[n.id])
+        if n != originNode:
+            path = getPath(originNode.id, str(n.id), previous)
+            print "least-cost path to node "+str(n.id)+": "+str(path)+" and the cost is "+str(distance[n.id])
     t2 = threading.Timer(30, printSearch, [originNode])
     t2.daemon = True
     t2.start()
